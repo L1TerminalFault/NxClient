@@ -1,5 +1,9 @@
 *.iml
 .gradle
+.kotlin
+.project
+.settings
+*.keystore
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -13,3 +17,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+kls_database.db
+gradle.properties
