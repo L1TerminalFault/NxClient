@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -16,12 +17,14 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.collection.mutableIntIntMapOf
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,16 +33,25 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -54,61 +66,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import rx.xdk.nx.Notifier
 import rx.xdk.nx.Utils
+import rx.xdk.nx.Utils.checkNotificationPermission
+import rx.xdk.nx.Utils.createNotificationChannel
+import rx.xdk.nx.Utils.isNotificationServiceEnabled
 import rx.xdk.nx.ui.theme.NxTheme
+import kotlin.collections.mutableSetOf
 
 class MainActivity : ComponentActivity() {
-  private val channelID = "default_channel_id"
-
-  private fun isNotificationServiceEnabled(context: Context): Boolean {
-    val pkgName = context.packageName
-    val flat =
-      Settings.Secure.getString(
-        context.contentResolver,
-        "enabled_notification_listeners",
-      )
-    if (!flat.isNullOrEmpty()) {
-      val names = flat.split(":")
-      for (name in names) {
-        val cn = android.content.ComponentName.unflattenFromString(name)
-        if (cn != null && cn.packageName == pkgName) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-
-  private fun createNotificationChannel() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val name = "General"
-      val descriptionText = "General notifications"
-      val importance = NotificationManager.IMPORTANCE_HIGH
-	
-      val channel =
-        NotificationChannel(channelID, name, importance).apply {
-          description = descriptionText
-        }
-	
-      val notificationManager = getSystemService(NotificationManager::class.java)
-      notificationManager.createNotificationChannel(channel)
-    }
-  }
-
-  private fun checkNotificationPermission(): Boolean {
-    var granted = true
-    if (Build.VERSION.SDK_INT >= 33) {
-      granted =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-        PackageManager.PERMISSION_GRANTED
-    }
-
-    return granted
-  }
-
   override fun onCreate(savedInstanceState: Bundle?) {
-    createNotificationChannel()
+    createNotificationChannel(this)
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
 
@@ -140,8 +111,10 @@ class MainActivity : ComponentActivity() {
     }
 
     val prefs = getSharedPreferences("nx_prefs", Context.MODE_PRIVATE)
-    val allowdedChannels = setOf("CBE")
-    prefs.edit().putStringSet("allowed_channels", allowdedChannels).apply()
+    if (prefs.getStringSet("all_channels", null) == null) {
+      val allChannels = setOf<String>("CBE", "Test", "Updates", "Messages")
+      prefs.edit().putStringSet("all_channels", allChannels).apply()
+    }
 
     setContent {
       NxTheme {
@@ -165,11 +138,24 @@ fun mainView(
     verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
   ) {
     Spacer(modifier = Modifier.fillMaxHeight(0.08f))
-    Text("NX Notification Listener", modifier = Modifier, fontSize = 30.sp)
+    Row(
+      modifier = Modifier,
+      horizontalArrangement = Arrangement.spacedBy(0.5.dp, Alignment.CenterHorizontally),
+    ) {
+      Text("NxClient ", modifier = Modifier, fontSize = 18.sp)
+      Text(
+        "v1.0.0",
+        color = Color.Gray,
+        fontSize = 9.sp,
+        lineHeight = 18.sp,
+        modifier = Modifier.align(Alignment.Bottom),
+      )
+    }
     Text(
-      "This app will allow you to pipe your notifications to the configured server, for safety it will block any unregistered notifications from being piped also it will pair only to one device through the link provided, for any questions contact the developer.",
+      "This app will allow you to pipe your notifications to the configured server, for safety it will block any unregistered notifications from being piped, also it will pair only to one device through the link provided.",
       color = Color.Gray,
-      fontSize = 12.sp,
+      fontSize = 10.sp,
+      lineHeight = 14.sp,
       textAlign = TextAlign.Center,
       modifier = Modifier.padding(10.dp).widthIn(max = 450.dp),
     )
@@ -186,6 +172,25 @@ fun mainView(
           prefs.getString("last_connection_string", null),
         )
       }
+
+    var serviceEnabled = remember { mutableStateOf(isNotificationServiceEnabled(context)) }
+    var notificationPermissionGranted = remember { mutableStateOf<Boolean>(checkNotificationPermission(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+      val observer =
+        LifecycleEventObserver { _, event ->
+          if (event == Lifecycle.Event.ON_RESUME) {
+            serviceEnabled.value = isNotificationServiceEnabled(context)
+            notificationPermissionGranted.value = checkNotificationPermission(context)
+          }
+        }
+      lifecycleOwner.lifecycle.addObserver(observer)
+      onDispose {
+        lifecycleOwner.lifecycle.removeObserver(observer)
+      }
+    }
+
     // val connectionString = prefs.getString("connection_string", null)
     var focusReq = remember { FocusRequester() }
     if (connectionString.value == null || connectionString.value!!.isEmpty()) {
@@ -213,7 +218,7 @@ fun mainView(
           ).show()
       }
 
-      Text("Listener Not Configured", fontSize = 20.sp)
+      Text("Listener Not Configured", fontSize = 16.sp, lineHeight = 18.sp)
       Spacer(modifier = Modifier.height(14.dp))
       Column(modifier = Modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         LaunchedEffect(Unit) {
@@ -263,7 +268,7 @@ fun mainView(
             }) {
               Text("Use last connection")
             }
-            Text("${lastConnectionString.value}", fontSize = 12.sp, color = Color.Gray)
+            Text("${lastConnectionString.value}", fontSize = 12.sp, color = Color.Gray, lineHeight = 14.sp)
           }
         }
       }
@@ -273,51 +278,217 @@ fun mainView(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
       ) {
-        Text("Listener Running", color = Color.Gray, fontSize = 20.sp)
+        if (!serviceEnabled.value) {
+          Text(
+            "Notifications permission not set",
+            fontSize = 16.sp,
+            lineHeight = 18.sp,
+          )
+        } else {
+          Text(
+            "Listener Connected",
+            color = Color.Gray,
+            fontSize = 16.sp,
+            lineHeight = 18.sp,
+          )
+        }
         Row(
           modifier = Modifier,
           horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
           verticalAlignment = Alignment.CenterVertically,
         ) {
           val str = connectionString.value ?: ""
-          Column(modifier = Modifier) {
-            Text("Connection: $str")
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(modifier = Modifier.padding(1.dp), onClick = {
+          Column(
+            modifier = Modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically),
+          ) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Button(modifier = Modifier.padding(0.5.dp), onClick = {
               prefs.edit().putString("last_connection_string", connectionString.value).apply()
               lastConnectionString.value = str
               prefs.edit().remove("connection_string").apply()
               connectionString.value = null
             }) { Text("Change Connection") }
+
+            Text(
+              "Pipe: ${Utils.SERVER_ENDPOINT}/${connectionString.value}",
+              fontSize = 9.sp,
+              color = Color.Gray,
+              lineHeight = 9.sp,
+              textAlign = TextAlign.Center,
+            )
           }
         }
-        Text("Pipe: ${Utils.SERVER_ENDPOINT}/${connectionString.value}", fontSize = 14.sp, color = Color.Gray)
       }
+    }
+
+    if (!serviceEnabled.value) {
+          Column(
+            modifier = Modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically),
+          ) {
+            Spacer(modifier = Modifier.height(6.dp))
+      Button(modifier = Modifier.padding(0.5.dp), onClick = {
+        val intent =
+          Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          }
+        context.startActivity(intent)
+      }) {
+        Text("Enable Notification Access")
+      }
+      Text(
+        "Notification access is required for the app to listen for notification and to function properly",
+        color = Color.Gray,
+        fontSize = 9.sp,
+        lineHeight = 9.sp,
+        textAlign = TextAlign.Center,
+      )
+    }
+    }
+
+    if (!notificationPermissionGranted.value) {
+          Column(
+            modifier = Modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterVertically),
+          ) {
+            Spacer(modifier = Modifier.height(6.dp))
+      Button(modifier = Modifier.padding(0.5.dp), onClick = {
+        val intent =
+          Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          }
+        try {
+          context.startActivity(intent)
+        } catch (e: Exception) {
+          val fallbackIntent =
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+              data = Uri.fromParts("package", context.packageName, null)
+            }
+          context.startActivity(fallbackIntent)
+        }
+      }) {
+        Text("Grant Notification Permission")
+      }
+      Text(
+        "Notification permission is required to let you know the status of ongoing notifications ensure proper functionality",
+        color = Color.Gray,
+        fontSize = 9.sp,
+        lineHeight = 9.sp,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.padding(horizontal = 20.dp),
+      )
+    }
     }
 
     // Button(onClick = { Notifier.showNotification(context, "Test notification") }) {
     //   Text("Send test notification")
     // }
-    // Button(onClick = { Notifier.showNotification(context, "Test notification", title = "CBE") }) {
-    //   Text("Send allowed notification")
+    Button(onClick = { Notifier.showNotification(context, "Test notification", title = "CBE") }) {
+      Text("Send allowed notification")
+    }
+
+    val allChannels = prefs.getStringSet("all_channels", emptySet()) ?: emptySet()
+    val allowedChannels = remember { mutableStateOf(prefs.getStringSet("allowed_channels", emptySet()) ?: emptySet()) }
+
+    var allowedChannelsText =
+      if (allowedChannels.value.isNotEmpty()) {
+        "Allowed notifications from ${allowedChannels.value.size} channels"
+      } else {
+        "No allowed channels configured"
+      }
+
+    // if (!allowedChannelsText.isNullOrEmpty()) {
+    //   allowedChannelsText = "Allowed channels: $allowedChannelsText"
+    // } else {
+    //   allowedChannelsText = null
     // }
 
-    var allowedChannels =
-      prefs.getStringSet("allowed_channels", emptySet())?.joinToString(", ")
-    if (!allowedChannels.isNullOrEmpty()) {
-      allowedChannels = "Allowed channels: $allowedChannels"
-    } else {
-      allowedChannels = null
-    }
     Spacer(modifier = Modifier.weight(1f))
-    Text(
-      allowedChannels ?: "No allowed channels configured",
-      fontSize = 12.sp,
-      color = Color.Gray,
-    )
-    Spacer(modifier = Modifier.height(0.8.dp))
-    Text("2026", fontSize = 6.sp, color = Color.Gray)
-    Spacer(modifier = Modifier.height(0.1.dp))
+    Row(
+      horizontalArrangement = Arrangement.Center,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      val showMenu = remember { mutableStateOf(false) }
+      Text(
+        allowedChannelsText,
+        fontSize = 12.sp,
+        color = Color.Gray,
+        lineHeight = 12.sp,
+      )
+      IconButton(onClick = {
+        showMenu.value = true
+      }) {
+        Icon(Icons.Default.Menu, contentDescription = null)
+
+        if (showMenu.value) {
+          val selectedChannels =
+            remember {
+              (allowedChannels.value).toMutableStateList()
+            }
+          AlertDialog(
+            onDismissRequest = {
+              showMenu.value = false
+            },
+            title = { Text("Choose Notification Channels", fontSize = 14.sp, lineHeight = 16.sp) },
+            text = {
+              if (allChannels.isEmpty()) {
+                Text("No channels available")
+              } else {
+                Column(
+                  modifier = Modifier.fillMaxWidth(),
+                  verticalArrangement = Arrangement.spacedBy(0.dp),
+                ) {
+                  allChannels.forEach { channel ->
+                    val isChecked = selectedChannels.contains(channel) == true
+
+                    Row(
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.spacedBy(8.dp),
+                      modifier =
+                        Modifier
+                          .fillMaxWidth()
+                          .clickable {
+                            if (!isChecked) {
+                              selectedChannels.add(channel)
+                            } else {
+                              selectedChannels.remove(channel)
+                            }
+                          }.padding(14.dp),
+                    ) {
+                      Checkbox(
+                        checked = isChecked,
+                        onCheckedChange = null,
+                      )
+                      Spacer(modifier = Modifier.widthIn(4.dp))
+                      Text(channel, modifier = Modifier, fontSize = 12.sp, lineHeight = 14.sp)
+                    }
+                  }
+                }
+              }
+            },
+            confirmButton = {
+              Button(
+                onClick = {
+                  val finalSet = selectedChannels.toSet()
+                  prefs.edit().putStringSet("allowed_channels", finalSet).apply()
+                  allowedChannels.value = finalSet
+                  showMenu.value = false
+                },
+              ) {
+                Text("Done")
+              }
+            },
+          )
+        }
+      }
+    }
+    // Spacer(modifier = Modifier.height(0.8.dp))
+    Text("2026", fontSize = 6.sp, lineHeight = 6.sp, color = Color.Gray)
+    // Spacer(modifier = Modifier.height(0.05.dp))
   }
 }
