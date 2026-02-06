@@ -37,18 +37,75 @@ class NotifListener : NotificationListenerService() {
   private val client = OkHttpClient()
 
   override fun onNotificationPosted(sbn: StatusBarNotification) {
-    // if (sbn.packageName == "rx.xdk.nx") return
     val notif = sbn.notification ?: return
 
-    val title = notif.extras.getString("android.title") ?: ""
+    val titleOriginal = notif.extras.getString("android.title") ?: ""
     val text = notif.extras.getString("android.text") ?: ""
 
     val prefs = getSharedPreferences("nx_prefs", Context.MODE_PRIVATE)
     val connectionString = prefs.getString("connection_string", null) ?: ""
-    val allowedChannels = prefs.getStringSet("allowed_channels", emptySet()) ?: emptySet()
+    val allowedChannels = prefs.getStringSet("allowed_channels", emptySet())?.toMutableSet()
+      ?: mutableSetOf()
 
-    if (!allowedChannels.isNotEmpty() || !allowedChannels.contains(title)) {
+    // Fallback checker
+    // val allowedNotificationTitle = allowedChannels.any { channel -> title.contains(channel) || channel.contains(title) }
+
+    val title = if (titleOriginal.contains("127")) {
+      "127"
+    } else if (titleOriginal.contains("CBE")) {
+      "CBE"
+    } else if (titleOriginal.contains("BOA")) {
+      "BOA"
+    } else {
+      titleOriginal
+    }
+
+    // Debug only
+    // if (sbn.packageName != "rx.xdk.nx") {
+    //   Notifier.showNotification(
+    //     this,
+    //     "Notification posted by '${sbn.packageName}' with title '$title' saying '$text'",
+    //   )
+    //
+    // }
+
+    // Filtering notifications based on user preferences
+    // if (allowedChannels.contains(title)) {
+    //   if (sbn.packageName != "rx.xdk.nx") {
+    //     Notifier.showNotification(
+    //       this,
+    //       "notification from '${sbn.packageName}' with title '$title' is allowed, processing it",
+    //     )
+    //   }
+    // } else {
+    //   if (sbn.packageName != "rx.xdk.nx") {
+    //     Notifier.showNotification(
+    //       this,
+    //       "notification from '${sbn.packageName}' with title '$title' is NOT allowed in '$allowedChannels', skipping it",
+    //     )
+    //   }
+    //   return
+    // }
+
+    if (!allowedChannels.contains(title)) {
       return
+    }
+
+    // Filtering only incoming transaction notifications
+    // For CBE the magic incoming transaction body is " has been Credited with "
+    // For 127 the magic incoming transaction body is "You have received "
+    // For BOA the magic incoming transaction body is ""
+
+    val contentFilter = true
+
+    if (contentFilter) {
+      if (title.contains("CBE") && text.contains(Utils.CBE_FILTER).not()) {
+        return
+      } else if (title.contains("127") && text.contains(Utils.T127_FILTER).not()) {
+        return
+      } else if (title.contains("BOA") && text.contains(Utils.BOA_FILTER).not()) {
+        return
+      }
     }
 
     if (connectionString.isEmpty() || connectionString.isBlank()) {
@@ -58,11 +115,6 @@ class NotifListener : NotificationListenerService() {
 
     val context: Context = this
     sendToServer(context, connectionString, title, text, System.currentTimeMillis().toString())
-
-    // Notifier.showNotification(
-    //   this,
-    //   "Notification posted by '${sbn.packageName}' with title '$title' saying '$text'",
-    // )
   }
 
   override fun onListenerConnected() {
@@ -156,7 +208,8 @@ class NotifListener : NotificationListenerService() {
             savePending(context, connectionString, title, message, time)
             scheduleRetry()
           } else {
-            Notifier.showNotification(this, "Notification from '$title' sent successfully", id = 1)
+            val title = if (title == "127") "Telebirr" else title
+            Notifier.showNotification(this, "Notification from '$title' sent successfully")
           }
         }
       } catch (e: Exception) {

@@ -15,17 +15,16 @@ object Utils {
   const val SERVER_ENDPOINT = "https://nxsv.vercel.app"
   const val SERVER_URL = "https://nxsv.vercel.app/api/notifications/postNotification"
 
+  const val CBE_FILTER = " has been Credited with "
+  const val T127_FILTER = "You have received "
+
+  // TODO: Add BOA filter phrase
+  const val BOA_FILTER = ""
+
   val channelID = "default_channel_id"
 
   fun checkNotificationPermission(context: Context): Boolean {
     return NotificationManagerCompat.from(context).areNotificationsEnabled()
-    // var granted = true
-    // if (Build.VERSION.SDK_INT >= 33) {
-    //   granted =
-    //     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-    //     PackageManager.PERMISSION_GRANTED
-    // }
-    // return granted
   }
 
   fun isNotificationServiceEnabled(context: Context): Boolean {
