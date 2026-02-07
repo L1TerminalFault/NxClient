@@ -11,9 +11,6 @@ plugins {
 
 android {
   namespace = "rx.xdk.nx"
-  // compileSdk {
-  // 	version = release(34)
-  // }
   compileSdk = 34
 
   defaultConfig {
@@ -65,6 +62,13 @@ dependencies {
   implementation("androidx.room:room-ktx:$roomVersion")
   implementation("androidx.room:room-runtime:$roomVersion")
   ksp("androidx.room:room-compiler:$roomVersion")
+
+  // implementation("io.coil-kt:coil-compose:2.4.0")
+  // camera
+  implementation("io.github.g00fy2.quickie:quickie-bundled:1.10.0")
+  // barcode scanning
+  implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)

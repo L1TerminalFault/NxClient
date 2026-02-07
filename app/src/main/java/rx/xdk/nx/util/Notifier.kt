@@ -21,6 +21,13 @@ object Notifier {
     id: Int = System.currentTimeMillis().toInt(),
   ) {
     val manager = NotificationManagerCompat.from(context)
+
+    val numberOfActiveNotifications = manager.activeNotifications.size
+
+    if (numberOfActiveNotifications >= 24) {
+      manager.cancelAll()
+    }
+
     var icon = android.R.drawable.ic_dialog_info
     if (severity == 1) {
       // Warning

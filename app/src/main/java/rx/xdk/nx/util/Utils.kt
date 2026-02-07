@@ -13,17 +13,15 @@ import androidx.core.content.ContextCompat
 object Utils {
   // val Utils.SERVER_URL = "http://localhost:3000/api/notifications/postNotifications"
 
-  // const val BUILD_TYPE = "Debug"
-  const val BUILD_TYPE = "Release"
+  const val BUILD_TYPE = "Debug"
+  // const val BUILD_TYPE = "Release"
 
   const val SERVER_ENDPOINT = "https://nxsv.vercel.app"
   const val SERVER_URL = "https://nxsv.vercel.app/api/notifications/postNotification"
 
   const val CBE_FILTER = "has been Credited with"
   const val T127_FILTER = "You have received"
-
-  // TODO: Add BOA filter phrase
-  const val BOA_FILTER = ""
+  const val BOA_FILTER = "was credited with"
 
   val channelID = "default_channel_id"
 

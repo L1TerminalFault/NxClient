@@ -36,6 +36,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,6 +73,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import io.github.g00fy2.quickie.QRResult
+import io.github.g00fy2.quickie.ScanCustomCode
+import io.github.g00fy2.quickie.config.BarcodeFormat
+import io.github.g00fy2.quickie.config.ScannerConfig
 import rx.xdk.nx.Notifier
 import rx.xdk.nx.Utils
 import rx.xdk.nx.ui.theme.NxTheme
@@ -121,16 +126,60 @@ class MainActivity : ComponentActivity() {
     setContent {
       NxTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-          mainView(prefs = prefs, modifier = Modifier.padding(innerPadding))
+          mainView(prefs = prefs, qrScanner = ::startQrScanner, modifier = Modifier.padding(innerPadding))
         }
       }
     }
+  }
+
+  private val scanQrCodeLauncher =
+    registerForActivityResult(ScanCustomCode()) { result ->
+      when (result) {
+        is QRResult.QRSuccess -> {
+          val scannedString = result.content.rawValue ?: ""
+	  currentCallback?.invoke(scannedString)
+	  currentCallback = null
+          // Toast.makeText(this, "Scanned: $scannedString", Toast.LENGTH_LONG).show()
+          // return if (scannedString.contains("-") && scannedString.length == 9 && scannedString.all { it.isDigit() || it == '-' }) {
+          //   val prefs = getSharedPreferences("nx_prefs", Context.MODE_PRIVATE)
+          //   prefs.edit().putString("connection_string", scannedString).apply()
+          //   Toast.makeText(this, "Connection string saved successfully", Toast.LENGTH_SHORT).show()
+          // } else {
+          //   Toast.makeText(this, "Invalid QR code format", Toast.LENGTH_LONG).show()
+          // }
+        }
+
+        is QRResult.QRUserCanceled -> {
+          Toast.makeText(this, "Scan cancelled", Toast.LENGTH_SHORT).show()
+        }
+
+        is QRResult.QRError -> {
+          Toast.makeText(this, "Error scanning: ${result.exception.message}", Toast.LENGTH_LONG).show()
+        }
+
+        is QRResult.QRMissingPermission -> {
+          Toast.makeText(this, "Camera permission required", Toast.LENGTH_LONG).show()
+        }
+      }
+    }
+
+  private var currentCallback: ((String) -> Unit)? = null
+
+  private fun startQrScanner(onCodeScanned: (String) -> Unit) {
+    currentCallback = onCodeScanned
+    scanQrCodeLauncher.launch(
+      ScannerConfig
+        .Builder()
+        .setBarcodeFormats(listOf(BarcodeFormat.FORMAT_QR_CODE))
+        .build(),
+    )
   }
 }
 
 @Composable
 fun mainView(
   prefs: SharedPreferences,
+  qrScanner: ((String) -> Unit) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   // val mainBackgroundColor = Color(0xFF131314)
@@ -206,8 +255,10 @@ fun mainView(
       var textState by remember { mutableStateOf("") }
       val keyboardController = LocalSoftwareKeyboardController.current
 
-      fun submit() {
-        if (textState.isEmpty()) {
+      fun submit(text: String = textState) {
+	var textInput = text
+
+        if (textInput.isEmpty()) {
           Toast
             .makeText(
               context,
@@ -219,17 +270,17 @@ fun mainView(
 
         if ((
             (
-              textState.contains("-") &&
-                textState.length == 9
-            ) || (textState.contains("-").not() && textState.length == 8)
-          ) && textState.all { it.isDigit() || it == '-' }
+              textInput.contains("-") &&
+                textInput.length == 9
+            ) || (textInput.contains("-").not() && textInput.length == 8)
+          ) && textInput.all { it.isDigit() || it == '-' }
         ) {
-          if (textState.contains("-").not()) {
-            textState = textState.substring(0, 4) + "-" + textState.substring(4)
+          if (textInput.contains("-").not()) {
+            textInput = textInput.substring(0, 4) + "-" + textInput.substring(4)
           }
 
-          prefs.edit().putString("connection_string", textState).apply()
-          connectionString.value = textState
+          prefs.edit().putString("connection_string", textInput).apply()
+          connectionString.value = textInput
           keyboardController?.hide()
           Toast
             .makeText(
@@ -242,7 +293,7 @@ fun mainView(
         Toast
           .makeText(
             context,
-            "Connection string contains only 8 numbers and a hyphen",
+            "Connection string contains only 8 numbers",
             Toast.LENGTH_LONG,
           ).show()
       }
@@ -282,30 +333,46 @@ fun mainView(
               ),
           )
 
+          IconButton(
+            onClick = {
+              qrScanner(::submit)
+            },
+            // colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White))
+          ) {
+            Icon(Icons.Default.QrCode, contentDescription = null)
+          }
+        }
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          val show = remember { mutableStateOf(true) }
+          if (lastConnectionString.value != null && lastConnectionString.value != "" && show.value) {
+            Column(
+              modifier = Modifier,
+              verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+            ) {
+              Text("Use last connection", fontSize = 10.sp, color = Color.Gray, lineHeight = 13.sp)
+              Button(
+                colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+                onClick = {
+                  textState = lastConnectionString.value ?: ""
+                  show.value = false
+                },
+              ) {
+		val textString = lastConnectionString.value ?: ""
+                Text(textString)
+              }
+            }
+          }
+          Spacer(modifier = Modifier.weight(1f))
+
           Button(onClick = {
             submit()
           }, colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White)) {
             Text("Done")
-          }
-        }
-
-        val show = remember { mutableStateOf(true) }
-        if (lastConnectionString.value != null && show.value) {
-          Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-          ) {
-            Button(
-              colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
-              onClick = {
-                textState = lastConnectionString.value ?: ""
-                show.value = false
-              },
-            ) {
-              Text("Use last connection")
-            }
-            Text("${lastConnectionString.value}", fontSize = 12.sp, color = Color.Gray, lineHeight = 14.sp)
           }
         }
       }
