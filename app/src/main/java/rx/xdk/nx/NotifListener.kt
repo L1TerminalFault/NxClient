@@ -39,6 +39,9 @@ class NotifListener : NotificationListenerService() {
   override fun onNotificationPosted(sbn: StatusBarNotification) {
     val notif = sbn.notification ?: return
 
+    // Release only
+    if (Utils.BUILD_TYPE == "Release" && sbn.packageName == "rx.xdk.nx") return
+
     val titleOriginal = notif.extras.getString("android.title") ?: ""
     val text = notif.extras.getString("android.text") ?: ""
 
@@ -60,31 +63,32 @@ class NotifListener : NotificationListenerService() {
       }
 
     // Debug only
-    // if (sbn.packageName != "rx.xdk.nx") {
-    //   Notifier.showNotification(
-    //     this,
-    //     "Notification posted by '${sbn.packageName}' with title '$title' saying '$text'",
-    //   )
-    //
-    // }
+    if (Utils.BUILD_TYPE == "Debug") {
+      if (sbn.packageName != "rx.xdk.nx") {
+        Notifier.showNotification(
+          this,
+          "Notification posted by '${sbn.packageName}' with title '$title' saying '$text'",
+        )
+      }
 
-    // Filtering notifications based on user preferences
-    // if (allowedChannels.contains(title)) {
-    //   if (sbn.packageName != "rx.xdk.nx") {
-    //     Notifier.showNotification(
-    //       this,
-    //       "notification from '${sbn.packageName}' with title '$title' is allowed, processing it",
-    //     )
-    //   }
-    // } else {
-    //   if (sbn.packageName != "rx.xdk.nx") {
-    //     Notifier.showNotification(
-    //       this,
-    //       "notification from '${sbn.packageName}' with title '$title' is NOT allowed in '$allowedChannels', skipping it",
-    //     )
-    //   }
-    //   return
-    // }
+      // Filtering notifiers
+      if (allowedChannels.contains(title)) {
+        if (sbn.packageName != "rx.xdk.nx") {
+          Notifier.showNotification(
+            this,
+            "notification from '${sbn.packageName}' with title '$title' is allowed, processing it",
+          )
+        }
+      } else {
+        if (sbn.packageName != "rx.xdk.nx") {
+          Notifier.showNotification(
+            this,
+            "notification from '${sbn.packageName}' with title '$title' is NOT allowed in '$allowedChannels', skipping it",
+          )
+        }
+        return
+      }
+    }
 
     // Fallback checker
     // val allowedNotificationTitle = allowedChannels.any { channel -> title.contains(channel) || channel.contains(title) }
@@ -102,10 +106,34 @@ class NotifListener : NotificationListenerService() {
 
     if (contentFilter) {
       if (title.contains("CBE") && text.contains(Utils.CBE_FILTER).not()) {
+        // Debug only
+        if (Utils.BUILD_TYPE == "Debug") {
+          Notifier.showNotification(
+            this,
+            "Notification from 'CBE' didn't have the proper content to be sent, so dropping",
+          )
+        }
+
         return
       } else if (title.contains("127") && text.contains(Utils.T127_FILTER).not()) {
+        // Debug only
+        if (Utils.BUILD_TYPE == "Debug") {
+          Notifier.showNotification(
+            this,
+            "Notification from '127' didn't have the proper content to be sent, so dropping",
+          )
+        }
+
         return
       } else if (title.contains("BOA") && text.contains(Utils.BOA_FILTER).not()) {
+        // Debug only
+        if (Utils.BUILD_TYPE == "Debug") {
+          Notifier.showNotification(
+            this,
+            "Notification from 'BOA' didn't have the proper content to be sent, so dropping",
+          )
+        }
+
         return
       }
     }

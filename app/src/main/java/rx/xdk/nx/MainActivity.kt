@@ -111,10 +111,12 @@ class MainActivity : ComponentActivity() {
     }
 
     val prefs = getSharedPreferences("nx_prefs", Context.MODE_PRIVATE)
-    // if (prefs.getStringSet("all_channels", null) == null) {
+    if (prefs.getStringSet("all_channels", null) == null ||
+      prefs.getStringSet("all_channels", null) == emptySet<String>()
+    ) {
       val allChannels = setOf<String>("CBE", "BOA", "127")
       prefs.edit().putStringSet("all_channels", allChannels).apply()
-    // }
+    }
 
     setContent {
       NxTheme {
@@ -448,18 +450,64 @@ fun mainView(
       }
     }
 
-    // Button(onClick = { Notifier.showNotification(context, "shit You have received something but not known", title = "127") }) {
-    //   Text("Send from telebirr")
-    // }
-    // Button(onClick = { Notifier.showNotification(context, "shit You have received something but not known", title = "BOA") }) {
-    //   Text("Send from BOA")
-    // }
-    // Button(onClick = { Notifier.showNotification(context, "your account will has been Credited with something has been done just a test", title = "CBE") }) {
-    //   Text("Send from CBE")
-    // }
-    // Button(onClick = { Notifier.showNotification(context, "Test notification", title = "CBE") }) {
-    //   Text("Send from CBE Unverified")
-    // }
+    // Debug only
+    if (Utils.BUILD_TYPE == "Debug") {
+      Button(
+        onClick = {
+          Notifier
+            .showNotification(
+              context,
+              "Test that You have received something but not known",
+              title = "127",
+            )
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+      ) {
+        Text("Send from telebirr")
+      }
+
+      Button(
+        onClick = {
+          Notifier
+            .showNotification(
+              context,
+              "You have received something but not known",
+              title = "BOA",
+            )
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+      ) {
+        Text("Send from BOA")
+      }
+
+      Button(
+        onClick = {
+          Notifier
+            .showNotification(
+              context,
+              "Testing your account has been Credited with something, This is just a test",
+              title = "CBE",
+            )
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+      ) {
+        Text("Send from CBE")
+      }
+
+      Button(
+        onClick = {
+          Notifier
+            .showNotification(
+              context,
+              "Test notification this notification should be blocked by content filter",
+              title = "CBE",
+            )
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+      ) {
+        Text("Send from CBE non-eligible")
+      }
+    }
 
     val allChannels = prefs.getStringSet("all_channels", emptySet()) ?: emptySet()
     val allowedChannels = remember { mutableStateOf(prefs.getStringSet("allowed_channels", emptySet()) ?: emptySet()) }
