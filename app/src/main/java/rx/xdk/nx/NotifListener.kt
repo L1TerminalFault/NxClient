@@ -44,21 +44,20 @@ class NotifListener : NotificationListenerService() {
 
     val prefs = getSharedPreferences("nx_prefs", Context.MODE_PRIVATE)
     val connectionString = prefs.getString("connection_string", null) ?: ""
-    val allowedChannels = prefs.getStringSet("allowed_channels", emptySet())?.toMutableSet()
-      ?: mutableSetOf()
+    val allowedChannels =
+      prefs.getStringSet("allowed_channels", emptySet())?.toMutableSet()
+        ?: mutableSetOf()
 
-    // Fallback checker
-    // val allowedNotificationTitle = allowedChannels.any { channel -> title.contains(channel) || channel.contains(title) }
-
-    val title = if (titleOriginal.contains("127")) {
-      "127"
-    } else if (titleOriginal.contains("CBE")) {
-      "CBE"
-    } else if (titleOriginal.contains("BOA")) {
-      "BOA"
-    } else {
-      titleOriginal
-    }
+    val title =
+      if (titleOriginal.contains("127")) {
+        "127"
+      } else if (titleOriginal.contains("CBE")) {
+        "CBE"
+      } else if (titleOriginal.contains("BOA")) {
+        "BOA"
+      } else {
+        titleOriginal
+      }
 
     // Debug only
     // if (sbn.packageName != "rx.xdk.nx") {
@@ -87,16 +86,19 @@ class NotifListener : NotificationListenerService() {
     //   return
     // }
 
+    // Fallback checker
+    // val allowedNotificationTitle = allowedChannels.any { channel -> title.contains(channel) || channel.contains(title) }
+
     if (!allowedChannels.contains(title)) {
       return
     }
+
+    val contentFilter = true
 
     // Filtering only incoming transaction notifications
     // For CBE the magic incoming transaction body is " has been Credited with "
     // For 127 the magic incoming transaction body is "You have received "
     // For BOA the magic incoming transaction body is ""
-
-    val contentFilter = true
 
     if (contentFilter) {
       if (title.contains("CBE") && text.contains(Utils.CBE_FILTER).not()) {
@@ -120,7 +122,6 @@ class NotifListener : NotificationListenerService() {
   override fun onListenerConnected() {
     super.onListenerConnected()
     Notifier.showNotification(this, "Listener connected!", id = 1)
-    // Log.d("NotifListener", "Listener is ACTIVE")
   }
 
   private fun savePending(
@@ -208,8 +209,8 @@ class NotifListener : NotificationListenerService() {
             savePending(context, connectionString, title, message, time)
             scheduleRetry()
           } else {
-            val title = if (title == "127") "Telebirr" else title
-            Notifier.showNotification(this, "Notification from '$title' sent successfully")
+            val titleShown = if (title == "127") "Telebirr" else title
+            Notifier.showNotification(this, "Notification from '$titleShown' sent successfully")
           }
         }
       } catch (e: Exception) {
