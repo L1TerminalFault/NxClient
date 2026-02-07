@@ -4,6 +4,7 @@
 .project
 .settings
 *.keystore
+*.idsig
 /local.properties
 .idea
 .kotlin
