@@ -1,9 +1,16 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="66dp"
-    android:height="66dp"
+    android:width="512dp"
+    android:height="512dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
+
+<group
+	android:scaleX="0.68"
+	android:scaleY="0.68"
+	android:pivotX="256"
+	android:pivotY="256">
+
   <path
       android:pathData="M0.722,0.64l510,0l0,510l-510,0z"
       android:strokeLineJoin="bevel"
@@ -41,4 +48,7 @@
       </gradient>
     </aapt:attr>
   </path>
+
+  </group>
+
 </vector>
