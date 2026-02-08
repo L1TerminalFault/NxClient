@@ -11,12 +11,12 @@ plugins {
 
 android {
   namespace = "rx.xdk.nx"
-  compileSdk = 34
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "rx.xdk.nx"
     minSdk = 26
-    targetSdk = 34
+    targetSdk = 36
     versionCode = 1
     versionName = "1.0"
 
