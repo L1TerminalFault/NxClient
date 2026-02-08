@@ -277,7 +277,7 @@ fun mainView(
           Toast
             .makeText(
               context,
-              "Connection string saved successfully",
+              "Connection successful",
               Toast.LENGTH_SHORT,
             ).show()
           return
