@@ -56,8 +56,8 @@ class NotifListener : NotificationListenerService() {
         "127"
       } else if (titleOriginal.contains("CBE")) {
         "CBE"
-      } else if (titleOriginal.contains("BOA")) {
-        "BOA"
+      } else if (titleOriginal.contains("BoA")) {
+        "BoA"
       } else {
         titleOriginal
       }
@@ -120,17 +120,17 @@ class NotifListener : NotificationListenerService() {
         if (Utils.BUILD_TYPE == "Debug") {
           Notifier.showNotification(
             this,
-            "Notification from '127' didn't have the proper content to be sent, so dropping",
+            "Notification from 'Telebirr' didn't have the proper content to be sent, so dropping",
           )
         }
 
         return
-      } else if (title.contains("BOA") && text.contains(Utils.BOA_FILTER).not()) {
+      } else if (title.contains("BoA") && text.contains(Utils.BOA_FILTER).not()) {
         // Debug only
         if (Utils.BUILD_TYPE == "Debug") {
           Notifier.showNotification(
             this,
-            "Notification from 'BOA' didn't have the proper content to be sent, so dropping",
+            "Notification from 'BoA' didn't have the proper content to be sent, so dropping",
           )
         }
 

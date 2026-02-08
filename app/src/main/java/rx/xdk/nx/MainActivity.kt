@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -119,7 +120,7 @@ class MainActivity : ComponentActivity() {
     if (prefs.getStringSet("all_channels", null) == null ||
       prefs.getStringSet("all_channels", null) == emptySet<String>()
     ) {
-      val allChannels = setOf<String>("CBE", "BOA", "127")
+      val allChannels = setOf<String>("CBE", "BoA", "127")
       prefs.edit().putStringSet("all_channels", allChannels).apply()
     }
 
@@ -137,16 +138,8 @@ class MainActivity : ComponentActivity() {
       when (result) {
         is QRResult.QRSuccess -> {
           val scannedString = result.content.rawValue ?: ""
-	  currentCallback?.invoke(scannedString)
-	  currentCallback = null
-          // Toast.makeText(this, "Scanned: $scannedString", Toast.LENGTH_LONG).show()
-          // return if (scannedString.contains("-") && scannedString.length == 9 && scannedString.all { it.isDigit() || it == '-' }) {
-          //   val prefs = getSharedPreferences("nx_prefs", Context.MODE_PRIVATE)
-          //   prefs.edit().putString("connection_string", scannedString).apply()
-          //   Toast.makeText(this, "Connection string saved successfully", Toast.LENGTH_SHORT).show()
-          // } else {
-          //   Toast.makeText(this, "Invalid QR code format", Toast.LENGTH_LONG).show()
-          // }
+          currentCallback?.invoke(scannedString)
+          currentCallback = null
         }
 
         is QRResult.QRUserCanceled -> {
@@ -249,14 +242,13 @@ fun mainView(
       }
     }
 
-    // val connectionString = prefs.getString("connection_string", null)
     var focusReq = remember { FocusRequester() }
     if (connectionString.value == null || connectionString.value!!.isEmpty()) {
       var textState by remember { mutableStateOf("") }
       val keyboardController = LocalSoftwareKeyboardController.current
 
       fun submit(text: String = textState) {
-	var textInput = text
+        var textInput = text
 
         if (textInput.isEmpty()) {
           Toast
@@ -300,13 +292,17 @@ fun mainView(
 
       Text("Configure", fontSize = 16.sp, lineHeight = 18.sp)
       Spacer(modifier = Modifier.height(14.dp))
-      Column(modifier = Modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Column(
+        modifier = Modifier.widthIn(max = 450.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+      ) {
         LaunchedEffect(Unit) {
           focusReq.requestFocus()
         }
 
         Row(
-          modifier = Modifier.widthIn(max = 400.dp),
+          modifier = Modifier, // .widthIn(max = 400.dp),
           horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
           verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -337,7 +333,7 @@ fun mainView(
             onClick = {
               qrScanner(::submit)
             },
-            // colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White))
+            colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor, contentColor = Color.White),
           ) {
             Icon(Icons.Default.QrCode, contentDescription = null)
           }
@@ -352,22 +348,24 @@ fun mainView(
           if (lastConnectionString.value != null && lastConnectionString.value != "" && show.value) {
             Column(
               modifier = Modifier,
-              verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+              verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+              horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-              Text("Use last connection", fontSize = 10.sp, color = Color.Gray, lineHeight = 13.sp)
+              Text("Use last connection", fontSize = 10.sp, color = Color.Gray, lineHeight = 10.sp)
               Button(
                 colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
                 onClick = {
                   textState = lastConnectionString.value ?: ""
                   show.value = false
                 },
+                modifier = Modifier.padding(0.dp).height(30.dp).widthIn(max = 120.dp),
               ) {
-		val textString = lastConnectionString.value ?: ""
-                Text(textString)
+                val textString = lastConnectionString.value ?: ""
+                Text(textString, fontSize = 10.sp, lineHeight = 12.sp)
               }
             }
           }
-          Spacer(modifier = Modifier.weight(1f))
+          Spacer(modifier = Modifier.weight(1f)) // .widthIn(max = 300.dp))
 
           Button(onClick = {
             submit()
@@ -539,12 +537,12 @@ fun mainView(
             .showNotification(
               context,
               "You have received something but not known",
-              title = "BOA",
+              title = "BoA",
             )
         },
         colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
       ) {
-        Text("Send from BOA")
+        Text("Send from BoA")
       }
 
       Button(
@@ -598,9 +596,12 @@ fun mainView(
         color = Color.Gray,
         lineHeight = 12.sp,
       )
-      IconButton(onClick = {
-        showMenu.value = true
-      }) {
+      IconButton(
+        onClick = {
+          showMenu.value = true
+        },
+        colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor, contentColor = Color.White),
+      ) {
         Icon(Icons.Default.Menu, contentDescription = null)
 
         if (showMenu.value) {
@@ -653,7 +654,7 @@ fun mainView(
                       val fullName =
                         when (channel) {
                           "CBE" -> "CBE"
-                          "BOA" -> "Bank of Abyssinia"
+                          "BoA" -> "Bank of Abyssinia"
                           "127" -> "Telebirr"
                           else -> channel
                         }

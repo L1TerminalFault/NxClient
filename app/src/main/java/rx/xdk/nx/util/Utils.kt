@@ -13,8 +13,8 @@ import androidx.core.content.ContextCompat
 object Utils {
   // val Utils.SERVER_URL = "http://localhost:3000/api/notifications/postNotifications"
 
-  const val BUILD_TYPE = "Debug"
-  // const val BUILD_TYPE = "Release"
+  // const val BUILD_TYPE = "Debug"
+  const val BUILD_TYPE = "Release"
 
   const val SERVER_ENDPOINT = "https://nxsv.vercel.app"
   const val SERVER_URL = "https://nxsv.vercel.app/api/notifications/postNotification"
