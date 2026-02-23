@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
     if (prefs.getStringSet("all_channels", null) == null ||
       prefs.getStringSet("all_channels", null) == emptySet<String>()
     ) {
-      val allChannels = setOf<String>("CBE", "BoA", "127")
+      val allChannels = setOf<String>("CBE", "BOA", "127")
       prefs.edit().putStringSet("all_channels", allChannels).apply()
     }
 
@@ -522,7 +522,7 @@ fun mainView(
           Notifier
             .showNotification(
               context,
-              "Test that You have received something but not known",
+              "Test that You have received ETB something. Your current E-Money Account balance is not known",
               title = "127",
             )
         },
@@ -536,13 +536,13 @@ fun mainView(
           Notifier
             .showNotification(
               context,
-              "You have received something but not known",
-              title = "BoA",
+              "Your account was credited with ETB something. Available Balance: ETB something but not known",
+              title = "BOA",
             )
         },
         colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
       ) {
-        Text("Send from BoA")
+        Text("Send from BOA")
       }
 
       Button(
@@ -550,13 +550,27 @@ fun mainView(
           Notifier
             .showNotification(
               context,
-              "Testing your account has been Credited with something, This is just a test",
+              "your account has been Credited with ETB. Your Current Balance is something test",
               title = "CBE",
             )
         },
         colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
       ) {
         Text("Send from CBE")
+      }
+
+      Button(
+        onClick = {
+          Notifier
+            .showNotification(
+              context,
+              "Testing your account has done been Credited with something, This is just a test",
+              title = "BOA",
+            )
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+      ) {
+        Text("Send from BOA non-eligible")
       }
 
       Button(
@@ -654,7 +668,7 @@ fun mainView(
                       val fullName =
                         when (channel) {
                           "CBE" -> "CBE"
-                          "BoA" -> "Bank of Abyssinia"
+                          "BOA" -> "Bank of Abyssinia"
                           "127" -> "Telebirr"
                           else -> channel
                         }

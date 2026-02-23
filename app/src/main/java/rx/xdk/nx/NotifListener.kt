@@ -52,12 +52,12 @@ class NotifListener : NotificationListenerService() {
         ?: mutableSetOf()
 
     val title =
-      if (titleOriginal.contains("127")) {
-        "127"
-      } else if (titleOriginal.contains("CBE")) {
-        "CBE"
-      } else if (titleOriginal.contains("BoA")) {
-        "BoA"
+      if (titleOriginal.contains(Utils.T127_TITLE)) {
+        Utils.T127_TITLE
+      } else if (titleOriginal.contains(Utils.CBE_TITLE)) {
+        Utils.CBE_TITLE
+      } else if (titleOriginal.contains(Utils.BOA_TITLE)) {
+        Utils.BOA_TITLE
       } else {
         titleOriginal
       }
@@ -105,7 +105,7 @@ class NotifListener : NotificationListenerService() {
     // For BOA the magic incoming transaction body is ""
 
     if (contentFilter) {
-      if (title.contains("CBE") && text.contains(Utils.CBE_FILTER).not()) {
+      if (title.contains(Utils.CBE_TITLE) && text.lowercase().contains(Utils.CBE_FILTER).not()) {
         // Debug only
         if (Utils.BUILD_TYPE == "Debug") {
           Notifier.showNotification(
@@ -115,7 +115,7 @@ class NotifListener : NotificationListenerService() {
         }
 
         return
-      } else if (title.contains("127") && text.contains(Utils.T127_FILTER).not()) {
+      } else if (title.contains(Utils.T127_TITLE) && text.lowercase().contains(Utils.T127_FILTER).not()) {
         // Debug only
         if (Utils.BUILD_TYPE == "Debug") {
           Notifier.showNotification(
@@ -125,16 +125,30 @@ class NotifListener : NotificationListenerService() {
         }
 
         return
-      } else if (title.contains("BoA") && text.contains(Utils.BOA_FILTER).not()) {
+      } else if (title.contains(Utils.BOA_TITLE) && text.lowercase().contains(Utils.BOA_FILTER).not()) {
         // Debug only
         if (Utils.BUILD_TYPE == "Debug") {
           Notifier.showNotification(
             this,
-            "Notification from 'BoA' didn't have the proper content to be sent, so dropping",
+            "Notification from 'BOA' didn't have the proper content to be sent, so dropping",
           )
         }
 
         return
+      }
+    }
+
+    // Truncate the message
+    val truncateMessage = true
+    var message = text
+
+    if (truncateMessage) {
+      if (title.contains(Utils.CBE_TITLE)) {
+        message = text.substringBefore(Utils.CBE_TRUNCATE)
+      } else if (title.contains(Utils.BOA_TITLE)) {
+        message = text.substringBefore(Utils.BOA_TRUNCATE)
+      } else if (title.contains(Utils.T127_TITLE)) {
+        message = text.substringBefore(Utils.T127_TRUNCATE)
       }
     }
 
@@ -143,8 +157,12 @@ class NotifListener : NotificationListenerService() {
       return
     }
 
+    if (Utils.BUILD_TYPE == "Debug") {
+      Notifier.showNotification(this, "Sending notification from $title saying $message")
+    }
+
     val context: Context = this
-    sendToServer(context, connectionString, title, text, System.currentTimeMillis().toString())
+    sendToServer(context, connectionString, title, message, System.currentTimeMillis().toString())
   }
 
   override fun onListenerConnected() {

@@ -19,9 +19,36 @@ object Utils {
   const val SERVER_ENDPOINT = "https://nxsv.vercel.app"
   const val SERVER_URL = "https://nxsv.vercel.app/api/notifications/postNotification"
 
-  const val CBE_FILTER = "has been Credited with"
-  const val T127_FILTER = "You have received"
-  const val BOA_FILTER = "was credited with"
+  const val CBE_TITLE = "CBE"
+  const val T127_TITLE = "127"
+  const val BOA_TITLE = "BOA"
+
+  const val CBE_FILTER = "has been credited with etb"
+  const val T127_FILTER = "you have received etb"
+  const val BOA_FILTER = "was credited with etb"
+
+  const val CBE_TRUNCATE = "Your Current Balance is "
+  const val T127_TRUNCATE = "Your current E-Money Account balance is "
+  const val BOA_TRUNCATE = "Available Balance: "
+
+  // TODO: Refactor the logic to this
+  // object CBE {
+  //   val title = "CBE"
+  //   val filterString = "has been credited with"
+  //   val truncateString = "your current balance is "
+  // }
+  //
+  // object BOA {
+  //   val title = "BOA"
+  //   val filterString = "was credited with"
+  //   val truncateString = ""
+  // }
+  //
+  // object T127 {
+  //   val title = "127"
+  //   val filterString = "you have received etb"
+  //   val truncateString = ""
+  // }
 
   val channelID = "default_channel_id"
 
