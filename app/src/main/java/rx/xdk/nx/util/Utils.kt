@@ -31,6 +31,8 @@ object Utils {
   const val T127_TRUNCATE = "Your current E-Money Account balance is "
   const val BOA_TRUNCATE = "Available Balance: "
 
+  const val MAX_ALLOWED_AMOUNT: Double = 10000.00
+
   // TODO: Refactor the logic to this
   // object CBE {
   //   val title = "CBE"

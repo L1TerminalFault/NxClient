@@ -522,7 +522,7 @@ fun mainView(
           Notifier
             .showNotification(
               context,
-              "Test that You have received ETB something. Your current E-Money Account balance is not known",
+              "Test that You have received ETB 32.00 Your current E-Money Account balance is not known",
               title = "127",
             )
         },
@@ -536,7 +536,7 @@ fun mainView(
           Notifier
             .showNotification(
               context,
-              "Your account was credited with ETB something. Available Balance: ETB something but not known",
+              "Your account was credited with ETB 20000.00 Available Balance: ETB 40 something but not known",
               title = "BOA",
             )
         },
@@ -550,7 +550,7 @@ fun mainView(
           Notifier
             .showNotification(
               context,
-              "your account has been Credited with ETB. Your Current Balance is something test",
+              "your account has been Credited with ETB 100.00. Your Current Balance is something test",
               title = "CBE",
             )
         },

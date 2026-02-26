@@ -64,26 +64,29 @@ class NotifListener : NotificationListenerService() {
 
     // Debug only
     if (Utils.BUILD_TYPE == "Debug") {
-      if (sbn.packageName != "rx.xdk.nx") {
+      if (sbn.packageName != "rx.xdk.nx" || (sbn.packageName == "rx.xdk.nx" && title != "Test")) {
         Notifier.showNotification(
           this,
           "Notification posted by '${sbn.packageName}' with title '$title' saying '$text'",
+          title = "Test",
         )
       }
 
       // Filtering notifiers
       if (allowedChannels.contains(title)) {
-        if (sbn.packageName != "rx.xdk.nx") {
+        if (sbn.packageName != "rx.xdk.nx" || (sbn.packageName == "rx.xdk.nx" && title != "Test")) {
           Notifier.showNotification(
             this,
             "notification from '${sbn.packageName}' with title '$title' is allowed, processing it",
+            title = "Test",
           )
         }
       } else {
-        if (sbn.packageName != "rx.xdk.nx") {
+        if (sbn.packageName != "rx.xdk.nx" || (sbn.packageName == "rx.xdk.nx" && title != "Test")) {
           Notifier.showNotification(
             this,
             "notification from '${sbn.packageName}' with title '$title' is NOT allowed in '$allowedChannels', skipping it",
+            title = "Test",
           )
         }
         return
@@ -111,6 +114,7 @@ class NotifListener : NotificationListenerService() {
           Notifier.showNotification(
             this,
             "Notification from 'CBE' didn't have the proper content to be sent, so dropping",
+            title = "Test",
           )
         }
 
@@ -121,6 +125,7 @@ class NotifListener : NotificationListenerService() {
           Notifier.showNotification(
             this,
             "Notification from 'Telebirr' didn't have the proper content to be sent, so dropping",
+            title = "Test",
           )
         }
 
@@ -131,6 +136,7 @@ class NotifListener : NotificationListenerService() {
           Notifier.showNotification(
             this,
             "Notification from 'BOA' didn't have the proper content to be sent, so dropping",
+            title = "Test",
           )
         }
 
@@ -152,13 +158,55 @@ class NotifListener : NotificationListenerService() {
       }
     }
 
+    var amount = 0.00
+    var amountCheckFailed = false
+
+    if (title == "CBE") {
+      var amountStr = message.substringAfter("ETB ").substringBefore(". ")
+      if (amountStr.all { it.isDigit() || it == ',' || it == '.' }) {
+        if (amountStr.contains(",")) {
+          amountStr.replace(",", "")
+        }
+        amount = amountStr.toDouble()
+      } else {
+        amountCheckFailed = true
+      }
+    } else {
+      val amountStr = message.substringAfter("ETB ").substringBefore(" ")
+      if (amountStr.all { it.isDigit() || it == ',' || it == '.' }) {
+        if (amountStr.contains(",")) {
+          amountStr.replace(",", "")
+        }
+        amount = amountStr.toDouble()
+      } else {
+        amountCheckFailed = true
+      }
+    }
+
+    if (
+      !amountCheckFailed &&
+      amount > Utils.MAX_ALLOWED_AMOUNT
+    ) {
+      if (Utils.BUILD_TYPE == "Debug") {
+        Notifier.showNotification(
+          this,
+          "Amount of money '$amount' is more than the allowed value '${Utils.MAX_ALLOWED_AMOUNT}' so dropping",
+          2,
+          id = 1,
+          title = "Test",
+        )
+      }
+
+      return
+    }
+
     if (connectionString.isEmpty() || connectionString.isBlank()) {
       Notifier.showNotification(this, "Connection string is not set, cannot send notification", 2, id = 1)
       return
     }
 
     if (Utils.BUILD_TYPE == "Debug") {
-      Notifier.showNotification(this, "Sending notification from $title saying $message")
+      Notifier.showNotification(this, "Sending notification from $title saying $message", title = "Test")
     }
 
     val context: Context = this
