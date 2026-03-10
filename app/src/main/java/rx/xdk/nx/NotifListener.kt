@@ -32,12 +32,14 @@ import rx.xdk.nx.Utils
 import rx.xdk.nx.db.AppDatabase
 import rx.xdk.nx.db.PendingNotification
 import rx.xdk.nx.work.RetryWorker
+import com.clerk.api.Clerk
 
 class NotifListener : NotificationListenerService() {
   private val client = OkHttpClient()
 
   override fun onNotificationPosted(sbn: StatusBarNotification) {
     val notif = sbn.notification ?: return
+    val userId = Clerk.userFlow.value?.id ?: return
 
     // Release only
     if (Utils.BUILD_TYPE == "Release" && sbn.packageName == "rx.xdk.nx") return
@@ -46,7 +48,8 @@ class NotifListener : NotificationListenerService() {
     val text = notif.extras.getString("android.text") ?: ""
 
     val prefs = getSharedPreferences("nx_prefs", Context.MODE_PRIVATE)
-    val connectionString = prefs.getString("connection_string", null) ?: ""
+    // val connectionString = prefs.getString("connection_string", null) ?: ""
+    val connectionString = userId
     val allowedChannels =
       prefs.getStringSet("allowed_channels", emptySet())?.toMutableSet()
         ?: mutableSetOf()
@@ -200,10 +203,10 @@ class NotifListener : NotificationListenerService() {
       return
     }
 
-    if (connectionString.isEmpty() || connectionString.isBlank()) {
-      Notifier.showNotification(this, "Connection string is not set, cannot send notification", 2, id = 1)
-      return
-    }
+    // if (connectionString.isEmpty() || connectionString.isBlank()) {
+    //   Notifier.showNotification(this, "Connection string is not set, cannot send notification", 2, id = 1)
+    //   return
+    // }
 
     if (Utils.BUILD_TYPE == "Debug") {
       Notifier.showNotification(this, "Sending notification from $title saying $message", title = "Test")
@@ -288,7 +291,7 @@ class NotifListener : NotificationListenerService() {
         val req =
           Request
             .Builder()
-            .url(Utils.SERVER_URL)
+            .url(Utils.SERVER_POST_URL)
             .post(body)
             .build()
 

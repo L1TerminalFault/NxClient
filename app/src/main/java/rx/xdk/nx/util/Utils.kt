@@ -15,9 +15,16 @@ object Utils {
 
   // const val BUILD_TYPE = "Debug"
   const val BUILD_TYPE = "Release"
+  
+  const val VERSION = "3.2.0"
 
   const val SERVER_ENDPOINT = "https://nxsv.vercel.app"
-  const val SERVER_URL = "https://nxsv.vercel.app/api/notifications/postNotification"
+  // const val SERVER_ENDPOINT = "http://192.168.1.4:3000"
+
+  const val SERVER_POST_URL = "$SERVER_ENDPOINT/api/notifications/postNotification"
+  const val SERVER_ADDUSER_URL = "$SERVER_ENDPOINT/api/addSubscriber"
+  const val SERVER_REMOVEUSER_URL = "$SERVER_ENDPOINT/api/removeSubscriber"
+  const val SERVER_GETUSERS_URL = "$SERVER_ENDPOINT/api/getUsersList"
 
   const val CBE_TITLE = "CBE"
   const val T127_TITLE = "127"

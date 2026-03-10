@@ -40,7 +40,7 @@ class RetryWorker(
         val req =
           Request
             .Builder()
-            .url(Utils.SERVER_URL)
+            .url(Utils.SERVER_POST_URL)
             .post(body)
             .build()
 

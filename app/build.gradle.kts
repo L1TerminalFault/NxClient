@@ -5,6 +5,7 @@ plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
   id("org.jetbrains.kotlin.plugin.compose")
+  id("org.jetbrains.kotlin.plugin.serialization")
   // alias(libs.plugins.kotlin.android)
   // alias(libs.plugins.kotlin.compose)
 }
@@ -17,8 +18,8 @@ android {
     applicationId = "rx.xdk.nx"
     minSdk = 26
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 5
+    versionName = "3.2.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -36,12 +37,20 @@ android {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
   }
-  kotlinOptions {
-    jvmTarget = "21"
-  }
   buildFeatures {
     compose = true
   }
+  packaging {
+    resources {
+        excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+    }
+  }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
 }
 
 dependencies {
@@ -68,6 +77,20 @@ dependencies {
   implementation("io.github.g00fy2.quickie:quickie-bundled:1.10.0")
   // barcode scanning
   implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+  // Only if you're using the Clerk API without the Clerk UI components
+  implementation("com.clerk:clerk-android-api:1.0.1")
+
+  implementation("com.clerk:clerk-android-ui:1.0.1")
+  implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
+  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+
+  // Coil for Compose (Latest version as of March 2026)
+  implementation("io.coil-kt.coil3:coil-compose:3.0.0")
+  
+  // Optional: If you need GIF or SVG support
+  implementation("io.coil-kt.coil3:coil-gif:3.0.0")
+  implementation("io.coil-kt.coil3:coil-svg:3.0.0")
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
