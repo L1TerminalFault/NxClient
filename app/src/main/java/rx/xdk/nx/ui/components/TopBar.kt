@@ -38,7 +38,7 @@ fun TopBar() {
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
-          text = user?.username ?: user?.firstName ?: "Sign In",
+          text = user?.username ?: user?.firstName ?: "",
           color = if (user != null) Color.Unspecified else Color.Gray,
           fontSize = 14.sp,
         )

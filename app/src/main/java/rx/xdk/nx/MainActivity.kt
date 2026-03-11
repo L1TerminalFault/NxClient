@@ -18,6 +18,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.collection.mutableIntIntMapOf
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,8 +45,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
@@ -52,8 +59,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,6 +73,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -92,6 +98,7 @@ import rx.xdk.nx.Notifier
 import rx.xdk.nx.Utils
 import rx.xdk.nx.ui.components.TopBar
 import rx.xdk.nx.ui.theme.NxTheme
+import rx.xdk.nx.R
 import kotlin.collections.mutableListOf
 
 class MainActivity : ComponentActivity() {
@@ -252,7 +259,7 @@ fun mainView(
         verticalAlignment = Alignment.CenterVertically,
       ) {
         // }, shape = RoundedCornerShape(12.dp)) {
-        Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(100.dp))
+        Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(100.dp))
         Text(
           "NxClient will allow you to pipe your notifications to the users of your choice",
           fontSize = 14.sp,
@@ -449,6 +456,18 @@ fun mainView(
       }
     }
 
+    val infiniteTransition = rememberInfiniteTransition()
+    val angle by infiniteTransition.animateFloat(
+      initialValue = 0f,
+      targetValue = 360f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(500, easing = LinearEasing),
+          repeatMode = RepeatMode.Restart,
+        ),
+      label = ""
+    )
+
     // Box(modifier = Modifier.padding(10.dp).shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp), clip = false)) {
     Box(modifier = Modifier.padding(vertical = 8.dp, horizontal = 18.dp).background(color = Color(0x1F000000), shape = RoundedCornerShape(30.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) { // .shadow(elevation = 1.dp, shape = RoundedCornerShape(12.dp), clip = false).padding(14.dp)) {
       LaunchedEffect(addRes) {
@@ -463,6 +482,7 @@ fun mainView(
 
             fetchUsers()
           }
+
           "Add failed" -> {
             Toast
               .makeText(
@@ -471,8 +491,10 @@ fun mainView(
                 Toast.LENGTH_SHORT,
               ).show()
           }
+
           else -> {}
         }
+
         vm.clearAddRes()
       }
 
@@ -484,25 +506,44 @@ fun mainView(
         // }, shape = RoundedCornerShape(12.dp)) {
         Text("Add users by scanning QR code", fontSize = 15.sp, lineHeight = 12.sp)
         Spacer(modifier = Modifier.weight(1f))
-        Button(
+
+        IconButton(
           modifier = Modifier.padding(0.5.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+          colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor, contentColor = Color.White),
           onClick = {
             qrScanner(::addUser)
           },
         ) {
           if (lAdd) {
-            // CircularProgressIndicator()
-            Text("Adding...")
+            Icon(
+              painter = painterResource(id = R.drawable.progress_activity_24px),
+              contentDescription = null,
+              modifier = Modifier.size(24.dp).rotate(angle),
+            )
           } else {
             Icon(Icons.Default.Add, contentDescription = null)
           }
         }
+
+        // Button(
+        //   modifier = Modifier.padding(0.5.dp),
+        //   colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+        //   onClick = {
+        //     qrScanner(::addUser)
+        //   },
+        // ) {
+        //   if (lAdd) {
+        //     // CircularProgressIndicator()
+        //     Text("Adding...")
+        //   } else {
+        //     Icon(Icons.Default.Add, contentDescription = null)
+        //   }
+        // }
       }
     }
 
     // Box(modifier = Modifier.padding(10.dp).shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp), clip = false)) {
-    Box(modifier = Modifier.padding(vertical = 8.dp, horizontal = 18.dp).background(color = Color(0x1F000000), shape = RoundedCornerShape(30.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) { // .shadow(elevation = 1.dp, shape = RoundedCornerShape(12.dp), clip = false).padding(14.dp)) {
+    Box(modifier = Modifier.padding(vertical = 8.dp, horizontal = 18.dp).background(color = Color(0x1F000000), shape = RoundedCornerShape(30.dp))) { // .padding(horizontal = 14.dp, vertical = 8.dp)) { // .shadow(elevation = 1.dp, shape = RoundedCornerShape(12.dp), clip = false).padding(14.dp)) {
 
       LaunchedEffect(Unit) {
         vm.clearErrorFetch()
@@ -526,6 +567,7 @@ fun mainView(
 
             fetchUsers()
           }
+
           "Remove failed" -> {
             Toast
               .makeText(
@@ -534,13 +576,14 @@ fun mainView(
                 Toast.LENGTH_SHORT,
               ).show()
           }
+
           else -> {}
         }
         processingRemoveButton = null
         vm.clearRemRes()
       }
 
-      Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Column(modifier = modifier.fillMaxWidth()) { // , verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // Text("Users", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp, horizontal = 18.dp))
 
         if (eFetch != null) {
@@ -560,10 +603,10 @@ fun mainView(
         } else {
           LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
           ) {
-            items(users ?: emptyList<User>()) { user -> 
+            items(users ?: emptyList<User>()) { user ->
               Row(
                 modifier = Modifier.padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -572,26 +615,47 @@ fun mainView(
                 AsyncImage(
                   model = user.profileImage,
                   contentDescription = null,
-                  modifier = Modifier.size(50.dp).clip(CircleShape)
+                  modifier = Modifier.size(50.dp).clip(CircleShape),
                 )
                 Text(user.userName, fontSize = 14.sp)
                 Spacer(Modifier.weight(1f))
-                Button(
+
+                IconButton(
                   modifier = Modifier.padding(0.5.dp),
                   enabled = processingRemoveButton == null,
-                  colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+                  colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor, contentColor = Color.White),
                   onClick = {
                     processingRemoveButton = user.userId
                     removeUser(user.userId)
                   },
                 ) {
                   if (lRem && processingRemoveButton == user.userId) {
-                    // CircularProgressIndicator()
-                    Text("Removing...")
+                    Icon(
+                      painter = painterResource(id = R.drawable.progress_activity_24px),
+                      contentDescription = null,
+                      modifier = Modifier.size(24.dp).rotate(angle),
+                    )
                   } else {
                     Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red)
                   }
                 }
+
+                // Button(
+                //   modifier = Modifier.padding(0.5.dp),
+                //   enabled = processingRemoveButton == null,
+                //   colors = ButtonDefaults.buttonColors(containerColor = buttonColor, contentColor = Color.White),
+                //   onClick = {
+                //     processingRemoveButton = user.userId
+                //     removeUser(user.userId)
+                //   },
+                // ) {
+                //   if (lRem && processingRemoveButton == user.userId) {
+                //     // CircularProgressIndicator()
+                //     Text("Removing...")
+                //   } else {
+                //     Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red)
+                //   }
+                // }
               }
             }
           }

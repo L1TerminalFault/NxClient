@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import rx.xdk.nx.R
 
 object Notifier {
   private const val CHANNEL_ID = "default_channel_id"
@@ -28,19 +29,19 @@ object Notifier {
       manager.cancelAll()
     }
 
-    var icon = android.R.drawable.ic_dialog_info
-    if (severity == 1) {
-      // Warning
-      icon = android.R.drawable.ic_dialog_alert
-    } else if (severity == 2) {
-      // Error
-      icon = android.R.drawable.stat_notify_error
-    }
+    // var icon = android.R.drawable.ic_dialog_info
+    // if (severity == 1) {
+    //   // Warning
+    //   icon = android.R.drawable.ic_dialog_alert
+    // } else if (severity == 2) {
+    //   // Error
+    //   icon = android.R.drawable.stat_notify_error
+    // }
 
     val notification =
       NotificationCompat
         .Builder(context, CHANNEL_ID)
-        .setSmallIcon(icon)
+        .setSmallIcon(R.mipmap.ic_launcher)
         .setContentTitle(title)
         .setContentText(content)
         .setPriority(NotificationCompat.PRIORITY_HIGH)
