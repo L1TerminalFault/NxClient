@@ -15,7 +15,7 @@ object Utils {
 
   // const val BUILD_TYPE = "Debug"
   const val BUILD_TYPE = "Release"
-  
+
   const val VERSION = "3.2.0"
 
   const val SERVER_ENDPOINT = "https://nxsv.vercel.app"

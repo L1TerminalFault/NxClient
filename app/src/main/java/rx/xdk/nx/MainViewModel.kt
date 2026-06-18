@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+// import kotlinx.coroutines.flow.collectLatest
+// import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -56,6 +58,19 @@ class MainViewModel : ViewModel() {
   }
 
   init {
+    // viewModelScope.launch {
+    //   Clerk.sessionFlow.collectLatest { session ->
+    //     while (session != null) {
+    //       delay(10 * 60 * 1000L) // 10 minutes
+    //       try {
+    //         session.getToken()
+    //       } catch (e: Exception) {
+    //         // ignore network/refresh errors, retry next interval
+    //       }
+    //     }
+    //   }
+    // }
+
     combine(Clerk.isInitialized, Clerk.sessionFlow, Clerk.userFlow) { isInitialized, session, user ->
       val currentState = _uiState.value
       // _uiState.value =

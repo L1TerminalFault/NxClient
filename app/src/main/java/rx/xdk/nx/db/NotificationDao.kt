@@ -3,11 +3,12 @@ package rx.xdk.nx.db
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 @Dao
 interface NotificationDao {
-  @Insert
+  @Insert(onConflict = OnConflictStrategy.IGNORE)
   suspend fun insert(notification: PendingNotification)
 
   @Query("SELECT * FROM pending_notifications")

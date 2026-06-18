@@ -1,9 +1,13 @@
 package rx.xdk.nx.db
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "pending_notifications")
+@Entity(
+  tableName = "pending_notifications",
+  indices = [Index(value = ["title", "message", "time"], unique = true)]
+)
 data class PendingNotification(
   @PrimaryKey(autoGenerate = true) val id: Long = 0,
   val connectionString: String,
